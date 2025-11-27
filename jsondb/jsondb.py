@@ -38,6 +38,18 @@ class JsonDB:
         self._save_db()
         return record_id
 
+    def insert(self, collection: str, record_id: str, record: Dict[str, Any]) -> bool:
+        """Insert a new record with a specified ID in the collection."""
+        if collection not in self.data:
+            self.data[collection] = {}
+
+        if record_id in self.data[collection]:
+            return False  # Record with this ID already exists
+
+        self.data[collection][record_id] = record
+        self._save_db()
+        return True
+
     def _parse_value(self, value: str) -> Any:
         """Parse a value from string to appropriate type."""
         value = value.strip()
@@ -237,7 +249,7 @@ class JsonDB:
 
 # Example usage
 if __name__ == "__main__":
-    db = JsonDB("database.json")
+    db = JsonDB("_data/database.json")
 
     # Create records with dates
     user1_id = db.create("users", {"name": "Alice Smith", "age": 30, "city": "New York", "joined": "2025-09-01"})
@@ -277,6 +289,23 @@ if __name__ == "__main__":
     # Read by criteria: name contains 'Smith'
     print("\nUsers with name contains 'Smith':")
     print(db.read("users", criteria="name contains 'Smith'"))
+
+    # Insert a record with a specific ID
+    print("\nInserting a new record with a specific ID:")
+    #new_user_id = "custom-id-123"
+    new_user_id = str(uuid.uuid4())
+    success = db.insert("users", new_user_id, {"name": "Diana Prince", "age": 28, "city": "Washington D.C.", "joined": "2025-10-01"})
+    if success:
+        print("Record inserted successfully.")
+        print(db.read("users", new_user_id))
+    else:
+        print("Record with this ID already exists.")
+
+    # Try to insert a record with an existing ID
+    print("\nAttempting to insert a record with an existing ID:")
+    success_fail = db.insert("users", new_user_id, {"name": "Duplicate User", "age": 40, "city": "Metropolis", "joined": "2025-10-02"})
+    if not success_fail:
+        print("Insertion failed as expected for existing ID.")
 
     # Update a record
     db.update("users", user1_id, {"age": 31})

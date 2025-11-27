@@ -1,0 +1,52 @@
+{
+    "users": {
+        "6c15eed8-28ec-4e31-a9a6-73a18e06dfaf": {
+            "name": "Alice Smith",
+            "age": 31,
+            "city": "New York",
+            "joined": "2025-09-01"
+        },
+        "fc6e9250-1bd7-4f6e-8678-b79c848f026b": {
+            "name": "Charlie Brown",
+            "age": 35,
+            "city": "New York",
+            "joined": "2025-09-20"
+        },
+        "a19669c6-c761-4eb8-a0fa-bc827b49dd48": {
+            "name": "David Lee",
+            "age": 28,
+            "city": "Boston",
+            "joined": "2025-07-10"
+        },
+        "custom-id-123": {
+            "name": "Diana Prince",
+            "age": 28,
+            "city": "Washington D.C.",
+            "joined": "2025-10-01"
+        },
+        "6baa3c87-d1a3-4ea5-ad92-c31a2f65ef2c": {
+            "name": "Alice Smith",
+            "age": 31,
+            "city": "New York",
+            "joined": "2025-09-01"
+        },
+        "dd0ff62f-a838-4095-9aeb-6e04cbca315c": {
+            "name": "Charlie Brown",
+            "age": 35,
+            "city": "New York",
+            "joined": "2025-09-20"
+        },
+        "38b45fdd-a121-4bf7-b5a9-f9280b25147d": {
+            "name": "David Lee",
+            "age": 28,
+            "city": "Boston",
+            "joined": "2025-07-10"
+        },
+        "24546ec5-6cef-4d14-a818-971bd8a6aec7": {
+            "name": "Diana Prince",
+            "age": 28,
+            "city": "Washington D.C.",
+            "joined": "2025-10-01"
+        }
+    }
+}
