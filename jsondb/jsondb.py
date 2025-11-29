@@ -28,6 +28,9 @@ class JsonDB:
         with open(self.filename, 'w') as f:
             json.dump(self.data, f, indent=4)
 
+    def create_record_id(self):
+        return str(uuid.uuid4())
+
     def create(self, collection: str, record: Dict[str, Any]) -> str:
         """Create a new record in the specified collection."""
         if collection not in self.data:
