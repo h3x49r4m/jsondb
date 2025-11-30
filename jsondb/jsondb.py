@@ -31,8 +31,8 @@ class JsonDB:
     def create_record_id(self):
         return str(uuid.uuid4())
 
-    def create(self, collection: str, record: Dict[str, Any]) -> str:
-        """Create a new record in the specified collection."""
+    def insert(self, collection: str, record: Dict[str, Any]) -> str:
+        """Insert a new record in the specified collection."""
         if collection not in self.data:
             self.data[collection] = {}
 
@@ -41,8 +41,8 @@ class JsonDB:
         self._save_db()
         return record_id
 
-    def create_many(self, collection: str, records: List[Dict[str, Any]]) -> List[str]:
-        """Create multiple records in the specified collection."""
+    def insert_many(self, collection: str, records: List[Dict[str, Any]]) -> List[str]:
+        """Insert multiple records in the specified collection."""
         if collection not in self.data:
             self.data[collection] = {}
 
@@ -54,37 +54,6 @@ class JsonDB:
         
         self._save_db()
         return record_ids
-
-    def insert(self, collection: str, record_id: str, record: Dict[str, Any]) -> bool:
-        """Insert a new record with a specified ID in the collection."""
-        if collection not in self.data:
-            self.data[collection] = {}
-
-        if record_id in self.data[collection]:
-            return False  # Record with this ID already exists
-
-        self.data[collection][record_id] = record
-        self._save_db()
-        return True
-
-    def insert_many(self, collection: str, record_ids: List[str], records: List[Dict[str, Any]]) -> List[bool]:
-        """Insert multiple records with specified IDs in the collection."""
-        if len(record_ids) != len(records):
-            raise ValueError("record_ids and records must have the same number of elements.")
-
-        if collection not in self.data:
-            self.data[collection] = {}
-
-        results = []
-        for record_id, record in zip(record_ids, records):
-            if record_id in self.data[collection]:
-                results.append(False)  # Record with this ID already exists
-            else:
-                self.data[collection][record_id] = record
-                results.append(True)
-        
-        self._save_db()
-        return results
 
     def _parse_value(self, value: str) -> Any:
         """Parse a value from string to appropriate type."""
@@ -287,12 +256,12 @@ class JsonDB:
 if __name__ == "__main__":
     db = JsonDB("_data/database.json")
 
-    # Create records with dates
-    user1_id = db.create("users", {"name": "Alice Smith", "age": 30, "city": "New York", "joined": "2025-09-01"})
-    user2_id = db.create("users", {"name": "Bob Johnson", "age": 25, "city": "Boston", "joined": "2025-08-15"})
-    user3_id = db.create("users", {"name": "Charlie Brown", "age": 35, "city": "New York", "joined": "2025-09-20"})
-    user4_id = db.create("users", {"name": "David Lee", "age": 28, "city": "Boston", "joined": "2025-07-10"})
-    print(f"Created user IDs: {user1_id}, {user2_id}, {user3_id}, {user4_id}")
+    # Insert records with dates
+    user1_id = db.insert("users", {"name": "Alice Smith", "age": 30, "city": "New York", "joined": "2025-09-01"})
+    user2_id = db.insert("users", {"name": "Bob Johnson", "age": 25, "city": "Boston", "joined": "2025-08-15"})
+    user3_id = db.insert("users", {"name": "Charlie Brown", "age": 35, "city": "New York", "joined": "2025-09-20"})
+    user4_id = db.insert("users", {"name": "David Lee", "age": 28, "city": "Boston", "joined": "2025-07-10"})
+    print(f"Inserted user IDs: {user1_id}, {user2_id}, {user3_id}, {user4_id}")
 
     # Read all records
     print("\nAll users:")
@@ -326,22 +295,11 @@ if __name__ == "__main__":
     print("\nUsers with name contains 'Smith':")
     print(db.read("users", criteria="name contains 'Smith'"))
 
-    # Insert a record with a specific ID
-    print("\nInserting a new record with a specific ID:")
-    #new_user_id = "custom-id-123"
-    new_user_id = str(uuid.uuid4())
-    success = db.insert("users", new_user_id, {"name": "Diana Prince", "age": 28, "city": "Washington D.C.", "joined": "2025-10-01"})
-    if success:
-        print("Record inserted successfully.")
-        print(db.read("users", new_user_id))
-    else:
-        print("Record with this ID already exists.")
-
-    # Try to insert a record with an existing ID
-    print("\nAttempting to insert a record with an existing ID:")
-    success_fail = db.insert("users", new_user_id, {"name": "Duplicate User", "age": 40, "city": "Metropolis", "joined": "2025-10-02"})
-    if not success_fail:
-        print("Insertion failed as expected for existing ID.")
+    # Insert a new record
+    print("\nInserting a new record:")
+    new_user_id = db.insert("users", {"name": "Diana Prince", "age": 28, "city": "Washington D.C.", "joined": "2025-10-01"})
+    print("Record inserted successfully.")
+    print(db.read("users", new_user_id))
 
     # Update a record
     db.update("users", user1_id, {"age": 31})
@@ -354,13 +312,13 @@ if __name__ == "__main__":
     # List collections
     print("\nCollections:", db.list_collections())
 
-    # Create multiple records at once
-    print("\nCreating multiple records at once:")
+    # Insert multiple records at once
+    print("\nInserting multiple records at once:")
     new_users = [
         {"name": "Eve", "age": 40, "city": "London", "joined": "2025-11-01"},
         {"name": "Frank", "age": 50, "city": "Paris", "joined": "2025-11-02"},
     ]
-    new_user_ids = db.create_many("users", new_users)
-    print(f"Created new users with IDs: {new_user_ids}")
-    print("All users after creating many:")
+    new_user_ids = db.insert_many("users", new_users)
+    print(f"Inserted new users with IDs: {new_user_ids}")
+    print("All users after inserting many:")
     print(db.read("users"))
