@@ -41,6 +41,20 @@ class JsonDB:
         self._save_db()
         return record_id
 
+    def create_many(self, collection: str, records: List[Dict[str, Any]]) -> List[str]:
+        """Create multiple records in the specified collection."""
+        if collection not in self.data:
+            self.data[collection] = {}
+
+        record_ids = []
+        for record in records:
+            record_id = str(uuid.uuid4())
+            self.data[collection][record_id] = record
+            record_ids.append(record_id)
+        
+        self._save_db()
+        return record_ids
+
     def insert(self, collection: str, record_id: str, record: Dict[str, Any]) -> bool:
         """Insert a new record with a specified ID in the collection."""
         if collection not in self.data:
@@ -52,6 +66,25 @@ class JsonDB:
         self.data[collection][record_id] = record
         self._save_db()
         return True
+
+    def insert_many(self, collection: str, record_ids: List[str], records: List[Dict[str, Any]]) -> List[bool]:
+        """Insert multiple records with specified IDs in the collection."""
+        if len(record_ids) != len(records):
+            raise ValueError("record_ids and records must have the same number of elements.")
+
+        if collection not in self.data:
+            self.data[collection] = {}
+
+        results = []
+        for record_id, record in zip(record_ids, records):
+            if record_id in self.data[collection]:
+                results.append(False)  # Record with this ID already exists
+            else:
+                self.data[collection][record_id] = record
+                results.append(True)
+        
+        self._save_db()
+        return results
 
     def _parse_value(self, value: str) -> Any:
         """Parse a value from string to appropriate type."""
@@ -320,3 +353,14 @@ if __name__ == "__main__":
 
     # List collections
     print("\nCollections:", db.list_collections())
+
+    # Create multiple records at once
+    print("\nCreating multiple records at once:")
+    new_users = [
+        {"name": "Eve", "age": 40, "city": "London", "joined": "2025-11-01"},
+        {"name": "Frank", "age": 50, "city": "Paris", "joined": "2025-11-02"},
+    ]
+    new_user_ids = db.create_many("users", new_users)
+    print(f"Created new users with IDs: {new_user_ids}")
+    print("All users after creating many:")
+    print(db.read("users"))
