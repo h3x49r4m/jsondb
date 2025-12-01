@@ -31,29 +31,35 @@ class JsonDB:
     def create_record_id(self):
         return str(uuid.uuid4())
 
-    def insert(self, collection: str, record: Dict[str, Any]) -> str:
-        """Insert a new record in the specified collection."""
+    def insert(self, collection: str, record: Dict[str, Any], record_id: Optional[str] = None) -> str:
+        """Insert a new record in the specified collection. If record_id is not provided, a new UUID is generated."""
         if collection not in self.data:
             self.data[collection] = {}
 
-        record_id = str(uuid.uuid4())
+        if record_id is None:
+            record_id = self.create_record_id()
+        
         self.data[collection][record_id] = record
         self._save_db()
         return record_id
 
-    def insert_many(self, collection: str, records: List[Dict[str, Any]]) -> List[str]:
-        """Insert multiple records in the specified collection."""
+    def insert_many(self, collection: str, records: List[Dict[str, Any]], record_ids: Optional[List[str]] = None) -> List[str]:
+        """Insert multiple records in the specified collection. If record_ids are not provided, new UUIDs are generated."""
         if collection not in self.data:
             self.data[collection] = {}
 
-        record_ids = []
-        for record in records:
-            record_id = str(uuid.uuid4())
-            self.data[collection][record_id] = record
-            record_ids.append(record_id)
+        if record_ids is None:
+            generated_record_ids = [self.create_record_id() for _ in records]
+        else:
+            if len(record_ids) != len(records):
+                raise ValueError("Length of provided record_ids must match length of records.")
+            generated_record_ids = record_ids
+
+        for i, record in enumerate(records):
+            self.data[collection][generated_record_ids[i]] = record
         
         self._save_db()
-        return record_ids
+        return generated_record_ids
 
     def _parse_value(self, value: str) -> Any:
         """Parse a value from string to appropriate type."""
