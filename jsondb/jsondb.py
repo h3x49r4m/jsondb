@@ -90,12 +90,22 @@ class JsonDB:
                 except ValueError:
                     return value  # Fallback to string
 
+    def _get_nested_value(self, data: Dict[str, Any], key: str) -> Any:
+        """Retrieve a value from a nested dictionary using a dot-separated key."""
+        keys = key.split('.')
+        value = data
+        for k in keys:
+            if isinstance(value, dict) and k in value:
+                value = value[k]
+            else:
+                return None  # Key not found
+        return value
+
     def _evaluate_condition(self, rec_data: Dict[str, Any], key: str, operator: str, value: Any) -> bool:
         """Evaluate a single condition against a record."""
-        if key not in rec_data:
+        rec_value = self._get_nested_value(rec_data, key)
+        if rec_value is None:
             return False
-
-        rec_value = rec_data[key]
 
         # Handle date comparisons
         if operator in (">", "<", ">=", "<=", "==", "!=") and isinstance(value, datetime):
@@ -273,71 +283,102 @@ class JsonDB:
 
 # Example usage
 if __name__ == "__main__":
-    db = JsonDB("_data/database.json")
+    # Ensure a clean database for example usage
+    db_file = "_data/database.json"
+    if os.path.exists(db_file):
+        os.remove(db_file)
 
-    # Insert records with dates
-    user1_id = db.insert("users", {"name": "Alice Smith", "age": 30, "city": "New York", "joined": "2025-09-01"})
-    user2_id = db.insert("users", {"name": "Bob Johnson", "age": 25, "city": "Boston", "joined": "2025-08-15"})
-    user3_id = db.insert("users", {"name": "Charlie Brown", "age": 35, "city": "New York", "joined": "2025-09-20"})
+    db = JsonDB(db_file)
+
+    print("--- JsonDB Example Usage with Nested Search ---")
+
+    # 1. Insert records with and without nested data
+    print("\n1. Inserting various records:")
+    user1_id = db.insert("users", {"name": "Alice Smith", "age": 30, "city": "New York", "joined": "2025-09-01", "contact": {"email": "alice@example.com", "phone": "111-222-3333"}})
+    user2_id = db.insert("users", {"name": "Bob Johnson", "age": 25, "city": "Boston", "joined": "2025-08-15", "contact": {"email": "bob@example.com", "phone": "444-555-6666"}})
+    user3_id = db.insert("users", {"name": "Charlie Brown", "age": 35, "city": "New York", "joined": "2025-09-20", "address": {"street": "Main St", "zip": "10001"}})
     user4_id = db.insert("users", {"name": "David Lee", "age": 28, "city": "Boston", "joined": "2025-07-10"})
-    print(f"Inserted user IDs: {user1_id}, {user2_id}, {user3_id}, {user4_id}")
+    
+    product1_id = db.insert("products", {"name": "Laptop", "specs": {"cpu": "i7", "ram_gb": 16}, "price": 1200})
+    product2_id = db.insert("products", {"name": "Mouse", "specs": {"type": "wireless"}, "price": 25})
+    
+    print(f"  Inserted user IDs: {user1_id}, {user2_id}, {user3_id}, {user4_id}")
+    print(f"  Inserted product IDs: {product1_id}, {product2_id}")
 
-    # Read all records
-    print("\nAll users:")
+    # 2. Read all records in a collection
+    print("\n2. All users:")
     print(db.read("users"))
 
-    # Read by specific record ID
-    print("\nSingle user by ID:")
+    # 3. Read by specific record ID
+    print(f"\n3. Single user by ID ({user1_id}):")
     print(db.read("users", user1_id))
 
-    # Read by criteria: age > 25 and city == 'New York'
-    print("\nUsers with age > 25 and city == 'New York':")
+    # 4. Basic criteria searches
+    print("\n4. Users with age > 25 and city == 'New York':")
     print(db.read("users", criteria="age > 25 and city == 'New York'"))
 
-    # Read by criteria: city == 'Boston' or joined > '2025-08-01'
-    print("\nUsers with city == 'Boston' or joined > '2025-08-01':")
+    print("\n5. Users with city == 'Boston' or joined > '2025-08-01':")
     print(db.read("users", criteria="city == 'Boston' or joined > '2025-08-01'"))
 
-    # Read by criteria: (city == 'Boston') or (joined > '2025-08-01')
-    print("\nUsers with (city == 'Boston') or (joined > '2025-08-01'):")
-    print(db.read("users", criteria="(city == 'Boston') or (joined > '2025-08-01')"))
-
-    # Read by criteria: not (age <= 30)
-    print("\nUsers with not (age <= 30):")
+    print("\n6. Users with not (age <= 30):")
     print(db.read("users", criteria="not (age <= 30)"))
 
-    # Read by criteria: (age > 25 and city == 'New York') or joined != '2025-09-01'
-    print("\nUsers with (age > 25 and city == 'New York') or joined != '2025-09-01':")
-    print(db.read("users", criteria="(age > 25 and city == 'New York') or joined != '2025-09-01'"))
-
-    # Read by criteria: name contains 'Smith'
-    print("\nUsers with name contains 'Smith':")
+    print("\n7. Users with name contains 'Smith':")
     print(db.read("users", criteria="name contains 'Smith'"))
 
-    # Insert a new record
-    print("\nInserting a new record:")
-    new_user_id = db.insert("users", {"name": "Diana Prince", "age": 28, "city": "Washington D.C.", "joined": "2025-10-01"})
-    print("Record inserted successfully.")
-    print(db.read("users", new_user_id))
+    # 8. Nested search examples
+    print("\n8. Nested Search: Users with email 'alice@example.com':")
+    results = db.read("users", criteria="contact.email == 'alice@example.com'")
+    print(results)
+    assert len(results) == 1 and results[0]['name'] == 'Alice Smith'
 
-    # Update a record
+    print("\n9. Nested Search: Products with CPU 'i7':")
+    results = db.read("products", criteria="specs.cpu == 'i7'")
+    print(results)
+    assert len(results) == 1 and results[0]['name'] == 'Laptop'
+
+    print("\n10. Nested Search: Users in zip '10001':")
+    results = db.read("users", criteria="address.zip == '10001'")
+    print(results)
+    assert len(results) == 1 and results[0]['name'] == 'Charlie Brown'
+    
+    print("\n11. Nested Search with non-existent path (should be empty):")
+    results = db.read("users", criteria="address.street.name == 'NonExistent'")
+    print(results)
+    assert len(results) == 0
+
+    print("\n12. Combined Nested and Non-Nested criteria: Users in New York with phone '111-222-3333':")
+    results = db.read("users", criteria="city == 'New York' and contact.phone == '111-222-3333'")
+    print(results)
+    assert len(results) == 1 and results[0]['name'] == 'Alice Smith'
+
+    # 13. Update a record (non-nested)
+    print(f"\n13. Updating user {user1_id} age to 31:")
     db.update("users", user1_id, {"age": 31})
-    print("\nUpdated user:", db.read("users", user1_id))
+    print("   Updated user:", db.read("users", user1_id))
 
-    # Delete a record
+    # 14. Delete a record
+    print(f"\n14. Deleting user {user2_id}:")
     db.delete("users", user2_id)
-    print("\nUsers after deletion:", db.read("users"))
+    print("   Users after deletion:", db.read("users"))
 
-    # List collections
-    print("\nCollections:", db.list_collections())
+    # 15. List collections
+    print("\n15. Collections:", db.list_collections())
 
-    # Insert multiple records at once
-    print("\nInserting multiple records at once:")
+    # 16. Insert multiple records at once
+    print("\n16. Inserting multiple records at once:")
     new_users = [
         {"name": "Eve", "age": 40, "city": "London", "joined": "2025-11-01"},
         {"name": "Frank", "age": 50, "city": "Paris", "joined": "2025-11-02"},
     ]
     new_user_ids = db.insert_many("users", new_users)
-    print(f"Inserted new users with IDs: {new_user_ids}")
-    print("All users after inserting many:")
+    print(f"   Inserted new users with IDs: {new_user_ids}")
+    print("   All users after inserting many:")
     print(db.read("users"))
+
+    print("\n--- All example operations completed! ---")
+
+    # Clean up the dummy database
+    if os.path.exists(db_file):
+        os.remove(db_file)
+
