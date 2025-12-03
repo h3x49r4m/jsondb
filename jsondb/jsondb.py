@@ -352,21 +352,28 @@ if __name__ == "__main__":
     print(results)
     assert len(results) == 1 and results[0]['name'] == 'Alice Smith'
 
-    # 13. Update a record (non-nested)
-    print(f"\n13. Updating user {user1_id} age to 31:")
+    # 13. Nested Search: 3-level deep data
+    print("\n13. Nested Search: 3-level deep data 'level3_value':")
+    deep_data_id = db.insert("configurations", {"setting_id": "config1", "details": {"group": {"sub_group": "level3_value"}}})
+    results = db.read("configurations", criteria="details.group.sub_group == 'level3_value'")
+    print(results)
+    assert len(results) == 1 and results[0]['setting_id'] == 'config1'
+
+    # 14. Update a record (non-nested)
+    print(f"\n14. Updating user {user1_id} age to 31:")
     db.update("users", user1_id, {"age": 31})
     print("   Updated user:", db.read("users", user1_id))
 
-    # 14. Delete a record
-    print(f"\n14. Deleting user {user2_id}:")
+    # 15. Delete a record
+    print(f"\n15. Deleting user {user2_id}:")
     db.delete("users", user2_id)
     print("   Users after deletion:", db.read("users"))
 
-    # 15. List collections
-    print("\n15. Collections:", db.list_collections())
+    # 16. List collections
+    print("\n16. Collections:", db.list_collections())
 
-    # 16. Insert multiple records at once
-    print("\n16. Inserting multiple records at once:")
+    # 17. Insert multiple records at once
+    print("\n17. Inserting multiple records at once:")
     new_users = [
         {"name": "Eve", "age": 40, "city": "London", "joined": "2025-11-01"},
         {"name": "Frank", "age": 50, "city": "Paris", "joined": "2025-11-02"},
