@@ -15,12 +15,6 @@ Features
 - **Nested Data Search**: Query nested JSON objects using dot notation.
 - **Automatic Record IDs**: Generates UUIDs for new records if no ID is provided.
 
-Installation
-------------
-
-.. code-block:: bash
-
-    pip install jsondb-python
 
 Quick Start
 -----------
@@ -150,4 +144,4 @@ API Reference
 License
 -------
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the Apache 2.0 License. See the `LICENSE` file for details.
