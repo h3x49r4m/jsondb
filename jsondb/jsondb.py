@@ -4,6 +4,7 @@ from typing import Dict, Any, List, Optional, Union
 import uuid
 from datetime import datetime
 import re
+import urllib.request
 
 class JsonDB:
     def __init__(self, filename: str):
@@ -12,8 +13,17 @@ class JsonDB:
         self._load_db()
 
     def _load_db(self) -> None:
-        """Load data from JSON file if it exists, otherwise initialize empty data."""
-        if os.path.exists(self.filename):
+        """Load data from JSON file (local or URL) if it exists, otherwise initialize empty data."""
+        if self.filename.startswith('http://') or self.filename.startswith('https://'):
+            try:
+                with urllib.request.urlopen(self.filename) as response:
+                    data = response.read().decode('utf-8')
+                    self.data = json.loads(data)
+            except urllib.error.URLError as e:
+                raise IOError(f"Failed to fetch from URL: {e.reason}")
+            except json.JSONDecodeError:
+                raise ValueError("Failed to decode JSON from URL.")
+        elif os.path.exists(self.filename):
             try:
                 with open(self.filename, 'r') as f:
                     self.data = json.load(f)
@@ -21,7 +31,10 @@ class JsonDB:
                 self.data = {}
         else:
             self.data = {}
-            self._save_db()
+            # If it's a new local file, save it to ensure it exists.
+            # No need to save if it's a URL, as it's not a persistent local file.
+            if not (self.filename.startswith('http://') or self.filename.startswith('https://')):
+                self._save_db()
 
     def _save_db(self) -> None:
         """Save data to JSON file."""
