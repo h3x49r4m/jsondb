@@ -1,133 +1,153 @@
-
+=======
 JsonDB
-======
+=======
 
-JsonDB is a lightweight, file-based JSON database for Python, providing basic CRUD (Create, Read, Update, Delete) operations and advanced querying capabilities using a simple expression language. It's ideal for small-scale applications, prototyping, or when you need a persistent data store without the overhead of a full-fledged relational database.
+JsonDB is a lightweight, file-based database for Python that stores data in JSON format. It's designed for simplicity and ease of use, making it ideal for small projects, prototyping, or as an embedded database. It supports basic CRUD operations, complex queries, and can load data from local files or remote URLs.
 
 Features
 --------
 
-*   **File-based Storage**: Stores data in a single JSON file.
-*   **Collections**: Organize your data into collections, similar to NoSQL databases.
-*   **CRUD Operations**:
-    *   `create(collection, record)`: Add a new record to a collection.
-    *   `read(collection, record_id=None, criteria=None)`: Retrieve records by ID, by a complex criteria expression, or all records in a collection.
-    *   `update(collection, record_id, updates)`: Modify an existing record.
-    *   `delete(collection, record_id)`: Remove a record from a collection.
-*   **Advanced Querying**: The `read` method supports a powerful criteria expression language with:
-    *   Logical operators: `and`, `or`, `not`
-    *   Comparison operators: `==`, `!=`, `>`, `<`, `>=`, `<=`
-    *   String containment: `contains` (case-insensitive)
-    *   Parentheses for grouping expressions.
-    *   Automatic type parsing for integers, floats, and ISO-formatted datetimes.
-*   **Collection Listing**: `list_collections()` to get a list of all available collections.
+- **Simple & Lightweight**: No server or complex setup required.
+- **File-Based**: Stores data in a human-readable JSON file.
+- **CRUD Operations**: `insert`, `insert_many`, `read`, `update`, `delete`.
+- **Flexible Data Loading**: Load data from a local file or a remote URL.
+- **Powerful Querying**: Supports complex criteria with `and`, `or`, `not`, parentheses, and `contains`.
+- **Nested Data Search**: Query nested JSON objects using dot notation.
+- **Automatic Record IDs**: Generates UUIDs for new records if no ID is provided.
 
 Installation
 ------------
 
-JsonDB is a single-file library. Simply download `jsondb.py` and place it in your project directory.
+.. code-block:: bash
 
-Usage
------
+    pip install jsondb-python
 
-Initialize the database:
+Quick Start
+-----------
 
 .. code-block:: python
 
     from jsondb.jsondb import JsonDB
 
-    db = JsonDB("my_database.json")
+    # Initialize the database
+    db = JsonDB("_data/database.json")
 
-Create records:
+    # Insert a record
+    user_id = db.insert("users", {"name": "Alice", "age": 30})
+    print(f"Inserted user with ID: {user_id}")
 
-.. code-block:: python
-
-    user1_id = db.create("users", {"name": "Alice Smith", "age": 30, "city": "New York", "joined": "2025-09-01"})
-    user2_id = db.create("users", {"name": "Bob Johnson", "age": 25, "city": "Boston", "joined": "2025-08-15"})
-    product_id = db.create("products", {"name": "Laptop", "price": 1200, "in_stock": True})
-
-Read records:
-
-.. code-block:: python
-
-    # Read all users
+    # Read all records in a collection
     all_users = db.read("users")
     print("All users:", all_users)
 
-    # Read a single user by ID
-    alice = db.read("users", user1_id)
-    print("Alice:", alice)
+    # Read a specific record by ID
+    alice = db.read("users", record_id=user_id)
+    print("Read user by ID:", alice)
 
-    # Read users matching criteria
-    # Age greater than 25 AND city is 'New York'
-    ny_users = db.read("users", criteria="age > 25 and city == 'New York'")
-    print("NY users (age > 25):", ny_users)
+    # Update a record
+    db.update("users", user_id, {"age": 31})
+    print("Updated user:", db.read("users", user_id))
 
-    # Users in Boston OR joined after a specific date
-    boston_or_recent = db.read("users", criteria="city == 'Boston' or joined > '2025-08-01'")
-    print("Boston or recent users:", boston_or_recent)
-
-    # Users whose name contains 'smith' (case-insensitive)
-    smith_users = db.read("users", criteria="name contains 'Smith'")
-    print("Users with 'Smith' in name:", smith_users)
-
-    # Users NOT older than 30
-    not_older_than_30 = db.read("users", criteria="not (age > 30)")
-    print("Users not older than 30:", not_older_than_30)
-
-Update records:
-
-.. code-block:: python
-
-    db.update("users", user1_id, {"age": 31, "status": "active"})
-    print("Updated Alice:", db.read("users", user1_id))
-
-Delete records:
-
-.. code-block:: python
-
-    db.delete("users", user2_id)
+    # Delete a record
+    db.delete("users", user_id)
     print("Users after deletion:", db.read("users"))
 
-List collections:
+Querying Data
+-------------
+
+The `read` method supports a powerful `criteria` parameter for filtering records.
+
+**Basic Queries**
+
+You can filter records based on simple conditions:
 
 .. code-block:: python
 
-    collections = db.list_collections()
-    print("Collections:", collections)
+    # Find users with age greater than 25
+    users_over_25 = db.read("users", criteria="age > 25")
 
-Query Language Syntax
----------------------
+    # Find users in New York
+    users_in_ny = db.read("users", criteria="city == 'New York'")
 
-The `criteria` parameter in the `read` method accepts a string expression.
+**Nested Data Search**
 
-**Operators:**
+JsonDB supports querying nested JSON objects using dot notation (`.`).
 
-*   **Logical:** `and`, `or`, `not`
-*   **Comparison:** `==`, `!=`, `>`, `<`, `>=`, `<=`
-*   **String:** `contains` (case-insensitive substring check)
+.. code-block:: python
 
-**Value Types:**
+    # Insert a record with nested data
+    db.insert("users", {
+        "name": "John Doe",
+        "contact": {
+            "email": "john.doe@example.com",
+            "address": {
+                "city": "New York",
+                "zip": "10001"
+            }
+        }
+    })
 
-*   **Strings:** Enclose in single quotes (e.g., `'New York'`).
-*   **Numbers:** Integers and floats (e.g., `25`, `12.5`).
-*   **Dates:** ISO 8601 format strings (e.g., `'YYYY-MM-DD'`). These are automatically parsed into `datetime` objects for comparison.
+    # Search by nested email
+    john_doe = db.read("users", criteria="contact.email == 'john.doe@example.com'")
+    
+    # Search by deeply nested city
+    users_in_ny = db.read("users", criteria="contact.address.city == 'New York'")
 
-**Examples:**
 
-*   `age > 30 and city == 'London'`
-*   `name contains 'john' or status == 'pending'`
-*   `not (price < 100 or in_stock == False)`
-*   `joined >= '2025-01-01'`
-*   `(category == 'electronics' and price < 500) or (category == 'books' and rating > 4)`
+**Advanced Queries**
 
-Development
------------
+You can build complex queries using logical operators (`and`, `or`, `not`) and parentheses for grouping:
 
-To run the example usage provided in `jsondb.py`:
+.. code-block:: python
 
-.. code-block:: bash
+    # Users older than 25 in New York
+    results = db.read("users", criteria="age > 25 and city == 'New York'")
 
-    python jsondb/jsondb.py
+    # Users in Boston or older than 30
+    results = db.read("users", criteria="city == 'Boston' or age > 30")
 
-This will create a `database.json` file in the same directory and print the results of the example operations.
+    # Users not in Boston
+    results = db.read("users", criteria="not city == 'Boston'")
+
+    # Users whose name contains "Smith" (case-insensitive)
+    results = db.read("users", criteria="name contains 'Smith'")
+
+    # Grouped conditions
+    results = db.read("users", criteria="(age > 25 and city == 'New York') or name == 'Bob'")
+
+
+API Reference
+-------------
+
+**`JsonDB(filename: str)`**
+
+- `filename`: The path to the local JSON file or a URL to a remote one.
+
+**`insert(collection: str, record: Dict, record_id: Optional[str] = None) -> str`**
+
+- Inserts a single record into a collection. If `record_id` is not provided, a new UUID is generated.
+
+**`insert_many(collection: str, records: List[Dict], record_ids: Optional[List[str]] = None) -> List[str]`**
+
+- Inserts multiple records. If `record_ids` are not provided, new UUIDs are generated for each record.
+
+**`read(collection: str, record_id: Optional[str] = None, criteria: Optional[str] = None) -> Union[Dict, List[Dict]]`**
+
+- Reads a specific record by `record_id` or filters records by `criteria`. If neither is provided, it returns all records in the collection.
+
+**`update(collection: str, record_id: str, updates: Dict) -> bool`**
+
+- Updates a specific record with the provided `updates`.
+
+**`delete(collection: str, record_id: str) -> bool`**
+
+- Deletes a specific record from a collection.
+
+**`list_collections() -> List[str]`**
+
+- Returns a list of all collections in the database.
+
+License
+-------
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
